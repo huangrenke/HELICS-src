@@ -368,6 +368,243 @@ BOOST_DATA_TEST_CASE (value_federate_subscription_and_publication_registration,
 }
 
 
+BOOST_DATA_TEST_CASE(value_federate_subscriber_and_publisher_registration, bdata::make(core_types), core_type)
+{
+	helics_status status;
+	helics_federate_info_t fi;
+	helics_broker broker;
+	helics_federate vFed;
+	helics_publication pubid, pubid2, pubid3;
+	helics_subscription subid, subid2, subid3;
+	char pubname[100] = "n1", pubname2[100] = "n2", pubname3[100] = "n3", pubtype[100] = "n4",
+		pubunit3[100] = "n5";
+	char subname[100] = "n1", subname2[100] = "n2", subname3[100] = "n3", subtype[100] = "n4",
+		subtype2[100] = "n5", subtype3[100] = "n6", subunit3[100] = "n7";
+	std::cout << "value_federate_subscriber_and_publisher_registration - core_type:" << core_type << "\n";
+
+	broker = helicsCreateBroker(core_type.c_str(), nullptr, "--federates=1");
+	fi = helicsFederateInfoCreate();
+	status = helicsFederateInfoSetFederateName(fi, "fed0");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsFederateInfoSetCoreTypeFromString(fi, core_type.c_str());
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	vFed = helicsCreateValueFederate(fi);
+
+	// register the publications
+	pubid = helicsFederateRegisterPublication(vFed, "pub1", "", "");
+	pubid2 = helicsFederateRegisterGlobalPublication(vFed, "pub2", "int", "");
+	pubid3 = helicsFederateRegisterPublication(vFed, "pub3", "double", "V");
+
+	// these aren't meant to match the publications
+	subid = helicsFederateRegisterSubscription(vFed, "sub1", "", "");
+	subid2 = helicsFederateRegisterSubscription(vFed, "sub2", "int", "");
+	subid3 = helicsFederateRegisterSubscription(vFed, "sub3", "", "V");
+
+	// enter execution
+	status = helicsFederateEnterExecutionMode(vFed);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+
+	// check subscriptions
+	status = helicsSubscriptionGetKey(subid, subname, 100);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsSubscriptionGetKey(subid2, subname2, 100);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	BOOST_CHECK_EQUAL(subname, "sub1");
+	BOOST_CHECK_EQUAL(subname2, "sub2");
+	status = helicsSubscriptionGetKey(subid3, subname3, 100);
+	BOOST_CHECK_EQUAL(subname3, "sub3");
+
+	status = helicsSubscriptionGetType(subid, subtype, 100);
+	BOOST_CHECK_EQUAL(subtype, "def");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsSubscriptionGetType(subid2, subtype2, 100);
+	BOOST_CHECK_EQUAL(subtype2, "int64");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsSubscriptionGetType(subid3, subtype3, 100);
+	BOOST_CHECK_EQUAL(subtype3, "def");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsSubscriptionGetUnits(subid3, subunit3, 100);
+	BOOST_CHECK_EQUAL(subunit3, "V");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+
+	// check publications
+	helicsPublicationGetKey(pubid, pubname, 100);
+	status = helicsPublicationGetKey(pubid2, pubname2, 100);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	BOOST_CHECK_EQUAL(pubname, "fed0/pub1");
+	BOOST_CHECK_EQUAL(pubname2, "pub2");
+	status = helicsPublicationGetKey(pubid3, pubname3, 100);
+	BOOST_CHECK_EQUAL(pubname3, "fed0/pub3");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+
+	status = helicsPublicationGetType(pubid3, pubtype, 100);  // in this function the publication type is returned
+															  // in the char * argument of the function. The
+															  // return type is just to check that the function
+															  // execution was successful
+	BOOST_CHECK_EQUAL(pubtype, "double");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsPublicationGetUnits(pubid3, pubunit3, 100);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	BOOST_CHECK_EQUAL(pubunit3, "V");
+
+	status = helicsFederateFinalize(vFed);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+
+	status = helicsFederateFinalize(vFed);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	helicsFederateInfoFree(fi);
+	helicsFederateFree(vFed);
+	helicsBrokerFree(broker);
+	helicsCloseLibrary();
+
+	// SetupSingleBrokerTest<helics::ValueFederate>(core_type, 1);
+	// auto vFed1 = GetFederateAs<helics::ValueFederate>(0);
+
+	// register the publications
+	// helics::Publication pubid(vFed1.get(), "pub1", helics::helicsType<std::string>());
+	// helics::PublicationT<int> pubid2(helics::GLOBAL, vFed1.get(), "pub2");
+
+	// helics::Publication pubid3(vFed1.get(), "pub3", helics::helicsType<double>(), "V");
+
+	// these aren't meant to match the publications
+	// helics::Subscription subid1(false, vFed1.get(), "sub1");
+
+	// helics::SubscriptionT<int> subid2(false,vFed1.get(), "sub2");
+
+	// helics::Subscription subid3(false, vFed1.get(), "sub3", "V");
+	// enter execution
+	// vFed1->enterExecutionState();
+
+	// BOOST_CHECK(vFed1->getCurrentState() == helics::Federate::op_states::execution);
+	// check subscriptions
+	// auto sv = subid1.getName();
+	// auto sv2 = subid2.getName();
+	// BOOST_CHECK_EQUAL(sv, "sub1");
+	// BOOST_CHECK_EQUAL(sv2, "sub2");
+	// auto sub3name = subid3.getKey();
+	// BOOST_CHECK_EQUAL(sub3name, "sub3");
+
+	// BOOST_CHECK_EQUAL(subid1.getType(), "def"); //def is the default type
+	// BOOST_CHECK_EQUAL(subid2.getType(), "int32");
+	// BOOST_CHECK_EQUAL(subid3.getType(), "def");
+	// BOOST_CHECK_EQUAL(subid3.getUnits(), "V");
+
+	// check publications
+
+	// sv = pubid.getKey();
+	// sv2 = pubid2.getKey();
+	// BOOST_CHECK_EQUAL(sv, "fed0/pub1");
+	// BOOST_CHECK_EQUAL(sv2, "pub2");
+	// auto pub3name = pubid3.getKey();
+	// BOOST_CHECK_EQUAL(pub3name, "fed0/pub3");
+
+	// BOOST_CHECK_EQUAL(pubid3.getType(), "double");
+	// BOOST_CHECK_EQUAL(pubid3.getUnits(), "V");
+	// vFed1->finalize();
+
+	// BOOST_CHECK(vFed1->getCurrentState() == helics::Federate::op_states::finalize);
+}
+
+
+BOOST_DATA_TEST_CASE(value_federate_single_transfer_publisher, bdata::make(core_types), core_type)
+{
+	helics_status status;
+	helics_federate_info_t fi;
+	helics_broker broker;
+	helics_federate vFed;
+	helics_publication pubid;
+	helics_subscription subid;
+	//	helics_time_t stime = 1.0;
+	helics_time_t gtime;
+	char s[100] = "n2";
+	int retValue;
+
+	broker = helicsCreateBroker(core_type.c_str(), nullptr, "--federates=1");
+	fi = helicsFederateInfoCreate();
+	status = helicsFederateInfoSetFederateName(fi, "fed0");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsFederateInfoSetCoreTypeFromString(fi, core_type.c_str());
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsFederateInfoSetTimeDelta(fi, 1.0);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	vFed = helicsCreateValueFederate(fi);
+
+	// register the publications
+
+	pubid = helicsFederateRegisterGlobalPublication(vFed, "pub1", "string", "");
+	subid = helicsFederateRegisterSubscription(vFed, "pub1", "", "");
+	status = helicsFederateEnterExecutionMode(vFed);
+
+	// publish string1 at time=0.0;
+	status = helicsPublicationPublishString(pubid, "string1");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	helicsFederateRequestTime(vFed, 1.0, &gtime);
+	BOOST_CHECK_EQUAL(gtime, 1.0);
+
+	// get the value
+	status = helicsSubscriptionGetString(subid, s, 100);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	// make sure the string is what we expect
+	BOOST_CHECK_EQUAL(s, "string1");
+
+	// publish a second string
+	status = helicsPublicationPublishString(pubid, "string2");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	// make sure the value is still what we expect
+	status = helicsSubscriptionGetValue(subid, s, 100, &retValue);
+	BOOST_CHECK_EQUAL(s, "string1");
+	BOOST_CHECK_EQUAL(retValue, 7);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+
+	// advance time
+	helicsFederateRequestTime(vFed, 2.0, &gtime);
+	// make sure the value was updated
+	BOOST_CHECK_EQUAL(gtime, 2.0);
+	status = helicsSubscriptionGetValue(subid, s, 100, &retValue);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	BOOST_CHECK_EQUAL(s, "string2");
+
+	status = helicsFederateFinalize(vFed);
+	helicsFederateInfoFree(fi);
+	helicsFederateFree(vFed);
+	helicsBrokerFree(broker);
+	helicsCloseLibrary();
+
+	std::cout << "value_federate_single_transfer_publisher - core_type:" << core_type << "\n";
+	// SetupSingleBrokerTest<helics::ValueFederate>(core_type, 1);
+	// auto vFed1 = GetFederateAs<helics::ValueFederate>(0);
+
+	// register the publications
+	// helics::Publication pubid(helics::GLOBAL,vFed1.get(), "pub1",helics::helics_type_t::helicsString);
+
+	// helics::Subscription subid(vFed1.get(),"pub1");
+	// vFed1->setTimeDelta(1.0);
+	// vFed1->enterExecutionState();
+	// publish string1 at time=0.0;
+	// pubid.publish("string1");
+	// auto gtime = vFed1->requestTime(1.0);
+
+	// BOOST_CHECK_EQUAL(gtime, 1.0);
+	// std::string s;
+	// get the value
+	// subid.getValue(s);
+	// make sure the string is what we expect
+	// BOOST_CHECK_EQUAL(s, "string1");
+	// publish a second string
+	// pubid.publish("string2");
+	// make sure the value is still what we expect
+	// subid.getValue(s);
+
+	// BOOST_CHECK_EQUAL(s, "string1");
+	// advance time
+	// gtime = vFed1->requestTime(2.0);
+	// make sure the value was updated
+	// BOOST_CHECK_EQUAL(gtime, 2.0);
+	// subid.getValue(s);
+
+	// BOOST_CHECK_EQUAL(s, "string2");
+}
+
 BOOST_DATA_TEST_CASE (value_federate_single_transfer, bdata::make (core_types), core_type)
 {
 	helics_status status;
@@ -758,7 +995,7 @@ void runFederateTestVectorD(const char * core, const double defaultValue[], cons
 
 	//fixture.SetupSingleBrokerTest<helics::ValueFederate> (core_type_str, 1);
 	//auto vFed = fixture.GetFederateAs<helics::ValueFederate> (0);
-
+	
 	// register the publications
 	pubid = helicsFederateRegisterGlobalPublication(vFed, "pub1", "vector", "");
 	subid = helicsFederateRegisterSubscription(vFed, "pub1", "vector", "");
@@ -818,7 +1055,7 @@ void runFederateTestVectorD(const char * core, const double defaultValue[], cons
 	for (int i=0; i<len2; i++)
 	{
 		BOOST_CHECK_EQUAL(val[i], testValue2[i]);
-		std::cout << testValue2[i] << "\n";
+		std::cout << val[i] << "\n";
 	}
 
 	status = helicsFederateFinalize(vFed);
@@ -831,7 +1068,109 @@ void runFederateTestVectorD(const char * core, const double defaultValue[], cons
 	
 }
 
+void runFederateTestCplx(const char * core, const double defaultValue[], const double testValue1[], const double testValue2[], const char * datatype)
+{
+	helics_status status;
+	helics_federate_info_t fi;
+	helics_broker broker;
+	helics_federate vFed;
+	helics_publication pubid;
+	helics_subscription subid;
+	helics_time_t gtime;
+
+	double val1[2] = { 0,1};
+	double* val[2];
+	val[0] = &val1[0];
+	val[1] = &val1[1];
+	
+	broker = helicsCreateBroker(core, "", "--federates=1");
+	fi = helicsFederateInfoCreate();
+	status = helicsFederateInfoSetFederateName(fi, "fed0");
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsFederateInfoSetCoreTypeFromString(fi, core);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsFederateInfoSetTimeDelta(fi, 1.0);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	vFed = helicsCreateValueFederate(fi);
+
+	//FederateTestFixture fixture;
+
+	//fixture.SetupSingleBrokerTest<helics::ValueFederate> (core_type_str, 1);
+	//auto vFed = fixture.GetFederateAs<helics::ValueFederate> (0);
+
+	// register the publications
+	pubid = helicsFederateRegisterGlobalPublication(vFed, "pub1", "complex", "");
+	subid = helicsFederateRegisterSubscription(vFed, "pub1", "complex", "");
+	
+	status = helicsSubscriptionSetDefaultComplex(subid, defaultValue[0], defaultValue[1]);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	status = helicsFederateEnterExecutionMode(vFed);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	
+	// publish string1 at time=0.0;
+	status = helicsPublicationPublishComplex(pubid, testValue1[0], testValue1[1]);
+	int actualLen;
+	status = helicsSubscriptionGetComplex(subid, val[0], val[1]);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	
+	for (int i = 0; i<2; i++)
+	{
+		BOOST_CHECK_EQUAL(*val[i], defaultValue[i]);
+		std::cout << *val[i] << "\n";
+	}
+
+	
+	helicsFederateRequestTime(vFed, 1.0, &gtime);
+	BOOST_CHECK_EQUAL(gtime, 1.0);
+
+	// get the value
+
+	status = helicsSubscriptionGetComplex(subid, val[0], val[1]);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	// make sure the string is what we expect
+	for (int i = 0; i<2; i++)
+	{
+		BOOST_CHECK_EQUAL(*val[i], testValue1[i]);
+		std::cout << *val[i] << "\n";
+	}
+	
+	// publish a second string
+	status = helicsPublicationPublishComplex(pubid, testValue2[0], testValue2[1]);
+
+	// make sure the value is still what we expect
+	status = helicsSubscriptionGetComplex(subid, val[0], val[1]);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	for (int i = 0; i<2; i++)
+	{
+		BOOST_CHECK_EQUAL(*val[i], testValue1[i]);
+		std::cout << *val[i] << "\n";
+	}
+
+	// advance time
+	helicsFederateRequestTime(vFed, 2.0, &gtime);
+	// make sure the value was updated
+	BOOST_CHECK_EQUAL(gtime, 2.0);
+
+	status = helicsSubscriptionGetComplex(subid, val[0], val[1]);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	for (int i = 0; i<2; i++)
+	{
+		BOOST_CHECK_EQUAL(*val[i], testValue2[i]);
+		std::cout << *val[i] << "\n";
+	}
+
+	status = helicsFederateFinalize(vFed);
+	BOOST_CHECK_EQUAL(status, helics_ok);
+	std::cout << "value_federate_single_transfer_types - datatype:" << datatype << " core_type " << core << "\n";
+	helicsFederateInfoFree(fi);
+	helicsFederateFree(vFed);
+	helicsBrokerFree(broker);
+	helicsCloseLibrary();
+	
+}
+
 /*
+// Similar to runFederateTestv2. Additional tests not needed
 template <class X>
 void runFederateTestObj(const std::string &core_type_str,
     const X &defaultValue,
@@ -947,23 +1286,26 @@ BOOST_DATA_TEST_CASE(value_federate_single_transfer_string, bdata::make(core_typ
 
 BOOST_DATA_TEST_CASE(value_federate_single_transfer_vector, bdata::make(core_types), core_type)
 {
-	char datatype[20] = "vector";
+	char datatype[20] = "vector double";
 	const int len = 100;
+	int len1 = 2;
+	int len2 = 4;
+	int len3 = 3;
 	const double val1[len] = { 34.3, 24.2 };
 	const double val2[len] = { 12.4,14.7, 16.34, 18.17 };
 	const double val3[len] = { 9.9999, 8.8888, 7.7777 };
-	runFederateTestVectorD(core_type.c_str(), val1, val2, val3,2,4,3,datatype);
+	runFederateTestVectorD(core_type.c_str(), val1, val2, val3, len1, len2, len3, datatype);
 }
-/*
-BOOST_DATA_TEST_CASE(value_federate_single_transfer_vector_string, bdata::make(core_types), core_type)
+
+BOOST_DATA_TEST_CASE(value_federate_single_transfer_complex, bdata::make(core_types), core_type)
 {
-	char datatype[20] = "vector";
-	const char * sv1[][100]={ "hip", "hop" };
-	const char * val2[][100] = { "this is the first string\n", "this is the second string", 		//                                "this is the third\0"                                 " string"};;
-	const char * val3[][100] = { 9.9999, 8.8888, 7.7777 };
-	runFederateTestVectorD(core_type.c_str(), val1, val2, val3, datatype);
+	char datatype[20] = "complex numbers";
+	const double def[2] = { 54.23233, 0.7 };
+	const double v1[2] = { 10.0, 0.43 };
+	const double v2[2]= { -3e45, 1e-23 };
+	runFederateTestCplx(core_type.c_str(), def, v1, v2, datatype);
 }
-*/
+
 /*
 BOOST_DATA_TEST_CASE(value_federate_single_transfer, bdata::make(core_types), core_type)
 {   
@@ -987,7 +1329,7 @@ BOOST_DATA_TEST_CASE(value_federate_single_transfer, bdata::make(core_types), co
 }
 */
 /*
-
+// Similar to the tests run above. Not relevant for the C Interface
 BOOST_DATA_TEST_CASE(value_federate_single_transfer_types_publishers, bdata::make(core_types), core_type)
 {
     runFederateTestObj<double>(core_type, 10.3, 45.3, 22.7);
@@ -1287,245 +1629,5 @@ BOOST_DATA_TEST_CASE (value_federate_single_init_publish, bdata::make (core_type
 }
 
 */
-
-
-
-
-BOOST_DATA_TEST_CASE (value_federate_subscriber_and_publisher_registration, bdata::make (core_types), core_type)
-{
-    helics_status status;
-    helics_federate_info_t fi;
-    helics_broker broker;
-    helics_federate vFed;
-    helics_publication pubid, pubid2, pubid3;
-    helics_subscription subid, subid2, subid3;
-    char pubname[100] = "n1", pubname2[100] = "n2", pubname3[100] = "n3", pubtype[100] = "n4",
-         pubunit3[100] = "n5";
-    char subname[100] = "n1", subname2[100] = "n2", subname3[100] = "n3", subtype[100] = "n4",
-         subtype2[100] = "n5", subtype3[100] = "n6", subunit3[100] = "n7";
-    std::cout << "value_federate_subscriber_and_publisher_registration - core_type:" << core_type << "\n";
-
-    broker = helicsCreateBroker (core_type.c_str (), nullptr, "--federates=1");
-    fi = helicsFederateInfoCreate ();
-    status = helicsFederateInfoSetFederateName (fi, "fed0");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsFederateInfoSetCoreTypeFromString (fi, core_type.c_str ());
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    vFed = helicsCreateValueFederate (fi);
-
-    // register the publications
-    pubid = helicsFederateRegisterPublication (vFed, "pub1", "", "");
-    pubid2 = helicsFederateRegisterGlobalPublication (vFed, "pub2", "int", "");
-    pubid3 = helicsFederateRegisterPublication (vFed, "pub3", "double", "V");
-
-    // these aren't meant to match the publications
-    subid = helicsFederateRegisterSubscription (vFed, "sub1", "", "");
-    subid2 = helicsFederateRegisterSubscription (vFed, "sub2", "int", "");
-    subid3 = helicsFederateRegisterSubscription (vFed, "sub3", "", "V");
-
-    // enter execution
-    status = helicsFederateEnterExecutionMode (vFed);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-
-    // check subscriptions
-    status = helicsSubscriptionGetKey (subid, subname, 100);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsSubscriptionGetKey (subid2, subname2, 100);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    BOOST_CHECK_EQUAL (subname, "sub1");
-    BOOST_CHECK_EQUAL (subname2, "sub2");
-    status = helicsSubscriptionGetKey (subid3, subname3, 100);
-    BOOST_CHECK_EQUAL (subname3, "sub3");
-
-    status = helicsSubscriptionGetType (subid, subtype, 100);
-    BOOST_CHECK_EQUAL (subtype, "def");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsSubscriptionGetType (subid2, subtype2, 100);
-    BOOST_CHECK_EQUAL (subtype2, "int64");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsSubscriptionGetType (subid3, subtype3, 100);
-    BOOST_CHECK_EQUAL (subtype3, "def");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsSubscriptionGetUnits (subid3, subunit3, 100);
-    BOOST_CHECK_EQUAL (subunit3, "V");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-
-    // check publications
-    helicsPublicationGetKey (pubid, pubname, 100);
-    status = helicsPublicationGetKey (pubid2, pubname2, 100);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    BOOST_CHECK_EQUAL (pubname, "fed0/pub1");
-    BOOST_CHECK_EQUAL (pubname2, "pub2");
-    status = helicsPublicationGetKey (pubid3, pubname3, 100);
-    BOOST_CHECK_EQUAL (pubname3, "fed0/pub3");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-
-    status = helicsPublicationGetType (pubid3, pubtype, 100);  // in this function the publication type is returned
-                                                               // in the char * argument of the function. The
-                                                               // return type is just to check that the function
-                                                               // execution was successful
-    BOOST_CHECK_EQUAL (pubtype, "double");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsPublicationGetUnits (pubid3, pubunit3, 100);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    BOOST_CHECK_EQUAL (pubunit3, "V");
-
-    status = helicsFederateFinalize (vFed);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-
-    status = helicsFederateFinalize (vFed);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    helicsFederateInfoFree (fi);
-    helicsFederateFree (vFed);
-    helicsBrokerFree (broker);
-    helicsCloseLibrary ();
-
-    // SetupSingleBrokerTest<helics::ValueFederate>(core_type, 1);
-    // auto vFed1 = GetFederateAs<helics::ValueFederate>(0);
-
-    // register the publications
-    // helics::Publication pubid(vFed1.get(), "pub1", helics::helicsType<std::string>());
-    // helics::PublicationT<int> pubid2(helics::GLOBAL, vFed1.get(), "pub2");
-
-    // helics::Publication pubid3(vFed1.get(), "pub3", helics::helicsType<double>(), "V");
-
-    // these aren't meant to match the publications
-    // helics::Subscription subid1(false, vFed1.get(), "sub1");
-
-    // helics::SubscriptionT<int> subid2(false,vFed1.get(), "sub2");
-
-    // helics::Subscription subid3(false, vFed1.get(), "sub3", "V");
-    // enter execution
-    // vFed1->enterExecutionState();
-
-    // BOOST_CHECK(vFed1->getCurrentState() == helics::Federate::op_states::execution);
-    // check subscriptions
-    // auto sv = subid1.getName();
-    // auto sv2 = subid2.getName();
-    // BOOST_CHECK_EQUAL(sv, "sub1");
-    // BOOST_CHECK_EQUAL(sv2, "sub2");
-    // auto sub3name = subid3.getKey();
-    // BOOST_CHECK_EQUAL(sub3name, "sub3");
-
-    // BOOST_CHECK_EQUAL(subid1.getType(), "def"); //def is the default type
-    // BOOST_CHECK_EQUAL(subid2.getType(), "int32");
-    // BOOST_CHECK_EQUAL(subid3.getType(), "def");
-    // BOOST_CHECK_EQUAL(subid3.getUnits(), "V");
-
-    // check publications
-
-    // sv = pubid.getKey();
-    // sv2 = pubid2.getKey();
-    // BOOST_CHECK_EQUAL(sv, "fed0/pub1");
-    // BOOST_CHECK_EQUAL(sv2, "pub2");
-    // auto pub3name = pubid3.getKey();
-    // BOOST_CHECK_EQUAL(pub3name, "fed0/pub3");
-
-    // BOOST_CHECK_EQUAL(pubid3.getType(), "double");
-    // BOOST_CHECK_EQUAL(pubid3.getUnits(), "V");
-    // vFed1->finalize();
-
-    // BOOST_CHECK(vFed1->getCurrentState() == helics::Federate::op_states::finalize);
-}
-
-
-BOOST_DATA_TEST_CASE (value_federate_single_transfer_publisher, bdata::make (core_types), core_type)
-{
-    helics_status status;
-    helics_federate_info_t fi;
-    helics_broker broker;
-    helics_federate vFed;
-    helics_publication pubid;
-    helics_subscription subid;
-    //	helics_time_t stime = 1.0;
-    helics_time_t gtime;
-    char s[100] = "n2";
-    int retValue;
-
-    broker = helicsCreateBroker (core_type.c_str (), nullptr, "--federates=1");
-    fi = helicsFederateInfoCreate ();
-    status = helicsFederateInfoSetFederateName (fi, "fed0");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsFederateInfoSetCoreTypeFromString (fi, core_type.c_str ());
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    status = helicsFederateInfoSetTimeDelta (fi, 1.0);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    vFed = helicsCreateValueFederate (fi);
-
-    // register the publications
-
-    pubid = helicsFederateRegisterGlobalPublication (vFed, "pub1", "string", "");
-    subid = helicsFederateRegisterSubscription (vFed, "pub1", "", "");
-    status = helicsFederateEnterExecutionMode (vFed);
-
-    // publish string1 at time=0.0;
-    status = helicsPublicationPublishString (pubid, "string1");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    helicsFederateRequestTime (vFed, 1.0, &gtime);
-    BOOST_CHECK_EQUAL (gtime, 1.0);
-
-    // get the value
-    status = helicsSubscriptionGetString (subid, s, 100);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    // make sure the string is what we expect
-    BOOST_CHECK_EQUAL (s, "string1");
-
-    // publish a second string
-    status = helicsPublicationPublishString (pubid, "string2");
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    // make sure the value is still what we expect
-    status = helicsSubscriptionGetValue (subid, s, 100, &retValue);
-    BOOST_CHECK_EQUAL (s, "string1");
-    BOOST_CHECK_EQUAL (retValue, 7);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-
-    // advance time
-    helicsFederateRequestTime (vFed, 2.0, &gtime);
-    // make sure the value was updated
-    BOOST_CHECK_EQUAL (gtime, 2.0);
-    status = helicsSubscriptionGetValue (subid, s, 100, &retValue);
-    BOOST_CHECK_EQUAL (status, helics_ok);
-    BOOST_CHECK_EQUAL (s, "string2");
-
-    status = helicsFederateFinalize (vFed);
-    helicsFederateInfoFree (fi);
-    helicsFederateFree (vFed);
-    helicsBrokerFree (broker);
-    helicsCloseLibrary ();
-
-    std::cout << "value_federate_single_transfer_publisher - core_type:" << core_type << "\n";
-    // SetupSingleBrokerTest<helics::ValueFederate>(core_type, 1);
-    // auto vFed1 = GetFederateAs<helics::ValueFederate>(0);
-
-    // register the publications
-    // helics::Publication pubid(helics::GLOBAL,vFed1.get(), "pub1",helics::helics_type_t::helicsString);
-
-    // helics::Subscription subid(vFed1.get(),"pub1");
-    // vFed1->setTimeDelta(1.0);
-    // vFed1->enterExecutionState();
-    // publish string1 at time=0.0;
-    // pubid.publish("string1");
-    // auto gtime = vFed1->requestTime(1.0);
-
-    // BOOST_CHECK_EQUAL(gtime, 1.0);
-    // std::string s;
-    // get the value
-    // subid.getValue(s);
-    // make sure the string is what we expect
-    // BOOST_CHECK_EQUAL(s, "string1");
-    // publish a second string
-    // pubid.publish("string2");
-    // make sure the value is still what we expect
-    // subid.getValue(s);
-
-    // BOOST_CHECK_EQUAL(s, "string1");
-    // advance time
-    // gtime = vFed1->requestTime(2.0);
-    // make sure the value was updated
-    // BOOST_CHECK_EQUAL(gtime, 2.0);
-    // subid.getValue(s);
-
-    // BOOST_CHECK_EQUAL(s, "string2");
-}
 
 BOOST_AUTO_TEST_SUITE_END ()
