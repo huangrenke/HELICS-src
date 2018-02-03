@@ -13,7 +13,6 @@ Lawrence Livermore National Laboratory, operated by Lawrence Livermore National 
 
 #include <future>
 #include <iostream>
-#include <Windows.h>
 #include "ctestFixtures.h"
 
 #include "test_configuration.h"

@@ -13,7 +13,6 @@ Lawrence Livermore National Laboratory, operated by Lawrence Livermore National 
 
 #include <future>
 #include <iostream>
-#include <Windows.h>
 #include "ctestFixtures.h"
 
 #include "test_configuration.h"
@@ -343,7 +342,6 @@ BOOST_DATA_TEST_CASE (value_federate_subscription_and_publication_registration,
     //vFed1->finalize ();
 
     //BOOST_CHECK (vFed1->getCurrentState () == helics::Federate::op_states::finalize);
-	Sleep(4000);
 }
 
 BOOST_DATA_TEST_CASE(value_federate_subscriber_and_publisher_registration, bdata::make(core_types), core_type)
@@ -478,7 +476,6 @@ BOOST_DATA_TEST_CASE(value_federate_subscriber_and_publisher_registration, bdata
 	// vFed1->finalize();
 
 	// BOOST_CHECK(vFed1->getCurrentState() == helics::Federate::op_states::finalize);
-	Sleep(4000);
 }
 
 
@@ -582,7 +579,6 @@ BOOST_DATA_TEST_CASE(value_federate_single_transfer_publisher, bdata::make(core_
 	// subid.getValue(s);
 
 	// BOOST_CHECK_EQUAL(s, "string2");
-	Sleep(4000);
 }
 
 BOOST_DATA_TEST_CASE (value_federate_single_transfer, bdata::make (core_types), core_type)
@@ -687,7 +683,6 @@ BOOST_DATA_TEST_CASE (value_federate_single_transfer, bdata::make (core_types), 
     //vFed1->getValue (subid, s);
 
     //BOOST_CHECK_EQUAL (s, "string2");
-	Sleep(4000);
 }
 
 void runFederateTestDouble (const char * core, double defaultValue,double testValue1, double testValue2,const char * datatype)
@@ -795,7 +790,6 @@ void runFederateTestDouble (const char * core, double defaultValue,double testVa
     //BOOST_CHECK_EQUAL (val, testValue2);
 
     //vFed->finalize ();
-	Sleep(4000);
 }
 
 void runFederateTestInteger(const char * core, int defaultValue, int testValue1, int testValue2, const char * datatype)
@@ -869,7 +863,6 @@ void runFederateTestInteger(const char * core, int defaultValue, int testValue1,
 	helicsFederateFree(vFed);
     helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(4000);
 }
 
 void runFederateTestString(const char * core, const char * defaultValue, const char * testValue1, const char * testValue2 , const char * datatype)
@@ -945,7 +938,6 @@ void runFederateTestString(const char * core, const char * defaultValue, const c
 	helicsFederateFree(vFed);
     helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
 }
 
 void runFederateTestVectorD(const char * core, const double defaultValue[], const double testValue1[], const double testValue2[], int len, int len1, int len2, const char * datatype)
@@ -1039,8 +1031,6 @@ void runFederateTestVectorD(const char * core, const double defaultValue[], cons
 	helicsFederateFree(vFed);
     helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
-	
 }
 
 void runFederateTestCplx(const char * core, const double defaultValue[], const double testValue1[], const double testValue2[], const char * datatype)
@@ -1135,7 +1125,6 @@ void runFederateTestCplx(const char * core, const double defaultValue[], const d
 	helicsFederateFree(vFed);
 	helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
 }
 /*
 template <class X>
@@ -1373,7 +1362,6 @@ BOOST_DATA_TEST_CASE (value_federate_dual_transfer, bdata::make (core_types), co
     //vFed2->getValue (subid, s);
 
     //BOOST_CHECK_EQUAL (s, "string2");
-	Sleep(8000);
 }
 
 void runDualFederateTestInteger(const char * core, int64_t defaultValue, int64_t testValue1, int64_t testValue2, const char * datatype)
@@ -1453,7 +1441,6 @@ void runDualFederateTestInteger(const char * core, int64_t defaultValue, int64_t
 	helicsFederateFree(fedB);
 	helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
 }
 
 void runDualFederateTestDouble(const char * core, double defaultValue, double testValue1, double testValue2, const char * datatype)
@@ -1532,7 +1519,6 @@ void runDualFederateTestDouble(const char * core, double defaultValue, double te
 	helicsFederateFree(fedB);
 	helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
 }
 
 void runDualFederateTestString(const char * core, const char * defaultValue, const char * testValue1, const char * testValue2, const char * datatype)
@@ -1611,7 +1597,6 @@ void runDualFederateTestString(const char * core, const char * defaultValue, con
 	helicsFederateFree(fedB);
 	helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
 }
 
 void runDualFederateTestComplex(const char * core, double defaultValue[], double testValue1[], double testValue2[], const char * datatype)
@@ -1702,7 +1687,6 @@ void runDualFederateTestComplex(const char * core, double defaultValue[], double
 	helicsFederateFree(fedB);
 	helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
 }
 
 void runDualFederateTestVectorDouble(const char * core, const double defaultValue[], const double testValue1[], const double testValue2[], int64_t len, int64_t len1, int64_t len2, const char * datatype)
@@ -1794,7 +1778,6 @@ void runDualFederateTestVectorDouble(const char * core, const double defaultValu
 	helicsFederateFree(fedB);
 	helicsBrokerFree(broker);
 	helicsCloseLibrary();
-	Sleep(8000);
 }
 
 // This function is the C++ equivalent of the runDualFederateTest functions defined above. 
@@ -2016,7 +1999,5 @@ BOOST_DATA_TEST_CASE (value_federate_single_init_publish, bdata::make (core_type
     //vFed1->getValue (subid, val);
 
     //BOOST_CHECK_EQUAL (val, 3.0);
-	Sleep(8000);
 }
-
 BOOST_AUTO_TEST_SUITE_END ()
