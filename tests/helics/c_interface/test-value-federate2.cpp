@@ -10,6 +10,7 @@ Lawrence Livermore National Laboratory, operated by Lawrence Livermore National 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
 #include <boost/test/floating_point_comparison.hpp>
+#include <boost/filesystem.hpp>
 
 #include <future>
 #include <iostream>
@@ -28,6 +29,7 @@ namespace bdata = boost::unit_test::data;
 const std::string core_types[] = { "test", "ipc", "zmq", "test_2", "ipc_2", "zmq_2" };
 
 /** test block send and receive*/
+
 BOOST_DATA_TEST_CASE (test_block_send_receive, bdata::make (core_types), core_type)
 {
 	helics_status status;
@@ -233,8 +235,88 @@ BOOST_DATA_TEST_CASE (test_block_send_receive, bdata::make (core_types), core_ty
 //#if ENABLE_TEST_TIMEOUTS > 0
 // BOOST_TEST_DECORATOR(*utf::timeout(5))
 //#endif
-//	 BOOST_DATA_TEST_CASE(test_async_calls, bdata::make(core_types), core_type)
-// {
+BOOST_DATA_TEST_CASE(test_async_calls, bdata::make(core_types), core_type)
+{
+	helics_status status;
+	helics_federate_info_t fi, fi1;
+	helics_broker broker;
+	helics_federate vFed1, vFed2;
+	helics_publication pubid;
+	helics_subscription subid;
+	helics_time_t gtime;
+	helics_time_t f1time;
+	federate_state state;
+	char s[100] = "";
+	broker = helicsCreateBroker(core_type.c_str(), "", "--federates=2");
+	fi = helicsFederateInfoCreate();
+	fi1 = helicsFederateInfoCreate();
+	status = helicsFederateInfoSetFederateName(fi, "fed0");
+	status = helicsFederateInfoSetFederateName(fi1, "fed1");
+	status = helicsFederateInfoSetCoreTypeFromString(fi, core_type.c_str());
+	//status = helicsFederateInfoSetTimeDelta(fi, 1.0);
+	vFed1 = helicsCreateValueFederate(fi);
+	vFed2 = helicsCreateValueFederate(fi1);
+
+	// register the publications
+	pubid = helicsFederateRegisterGlobalPublication(vFed1, "pub1", "string", "");
+	subid = helicsFederateRegisterSubscription(vFed2, "pub1", "string", "");
+	status = helicsFederateSetTimeDelta(vFed1, 1.0);
+	status = helicsFederateSetTimeDelta(vFed2, 1.0);
+
+	status = helicsFederateEnterExecutionModeAsync(vFed1);
+	status = helicsFederateEnterExecutionModeAsync(vFed2);
+	status = helicsFederateEnterExecutionModeComplete(vFed1);
+	status = helicsFederateEnterExecutionModeComplete(vFed2);
+
+	// publish string1 at time=0.0;
+	status = helicsPublicationPublishString(pubid, "string1");
+
+	status = helicsFederateRequestTimeAsync(vFed1, 1.0);
+	status = helicsFederateRequestTimeComplete(vFed1, &f1time);
+	status = helicsFederateRequestTimeAsync(vFed2, 1.0);
+	status = helicsFederateRequestTimeComplete(vFed2, &gtime);
+
+	BOOST_CHECK_EQUAL(f1time, 1.0);
+	BOOST_CHECK_EQUAL(gtime, 1.0);
+
+	// get the value
+	status = helicsSubscriptionGetString(subid, s, 100);
+
+	// make sure the string is what we expect
+	BOOST_CHECK_EQUAL(s, "string1");
+
+	// publish a second string
+	status = helicsPublicationPublishString(pubid, "string2");
+
+	// make sure the value is still what we expect
+	status = helicsSubscriptionGetString(subid, s, 100);
+	BOOST_CHECK_EQUAL(s, "string1");
+
+	// advance time
+	status = helicsFederateRequestTimeAsync(vFed1, 2.0);
+	status = helicsFederateRequestTimeComplete(vFed1, &f1time);
+	status = helicsFederateRequestTimeAsync(vFed2, 2.0);
+	status = helicsFederateRequestTimeComplete(vFed2, &gtime);
+
+	BOOST_CHECK_EQUAL(f1time, 2.0);
+	BOOST_CHECK_EQUAL(gtime, 2.0);
+
+	// make sure the value was updated
+	status = helicsSubscriptionGetString(subid, s, 100);
+	BOOST_CHECK_EQUAL(s, "string2");
+
+	status = helicsFederateFinalize(vFed1);
+	status = helicsFederateFinalize(vFed2);
+
+	helicsFederateInfoFree(fi);
+	helicsFederateInfoFree(fi1);
+	helicsFederateFree(vFed1);
+	helicsFederateFree(vFed2);
+	helicsBrokerFree(broker);
+	helicsCloseLibrary();
+	
+	std::cout << "test_async_calls" << " core_type " << core_type.c_str() << "\n";
+
 //	 SetupSingleBrokerTest<helics::ValueFederate>(core_type, 2);
 //	 auto vFed1 = GetFederateAs<helics::ValueFederate>(0);
 //	 auto vFed2 = GetFederateAs<helics::ValueFederate>(1);
@@ -288,30 +370,28 @@ BOOST_DATA_TEST_CASE (test_block_send_receive, bdata::make (core_types), core_ty
 //	 BOOST_CHECK_EQUAL(s, "string2");
 //	 vFed1->finalize();
 //	 vFed2->finalize();
-// }
+}
 //
-// /** test the default constructor and move constructor and move assignment*/
-// BOOST_AUTO_TEST_CASE(test_move_calls)
-// {
-//	 helics::ValueFederate vFed;
+
 //
-//	 helics::FederateInfo fi("test1", helics::core_type::TEST);
-//	 fi.coreInitString = "3";
-//	 vFed = helics::ValueFederate(fi);
-//	 BOOST_CHECK_EQUAL(vFed.getName(), "test1");
-//
-//	 helics::ValueFederate vFedMoved(std::move(vFed));
-//	 BOOST_CHECK_EQUAL(vFedMoved.getName(), "test1");
-//	 BOOST_CHECK_NE(vFed.getName(), "test1");
-// }
-//
-// BOOST_AUTO_TEST_CASE(test_file_load)
-// {
+BOOST_AUTO_TEST_CASE(test_file_load)
+{
+	helics_status status;
+	helics_federate_info_t fi;
+	helics_federate vFed;
+	char s[100] = "";
+	fi = helicsFederateInfoCreate();
+	// path of the json file is hardcoded for now
+	vFed = helicsCreateValueFederateFromJson("C:/HELICS/HELICS-src/tests/helics/c_interface/test_files/example_value_fed.json");
+	status = helicsFederateGetName(vFed,s,200);
+	BOOST_CHECK_EQUAL(s,"fedName");
 //	 helics::ValueFederate vFed(std::string(TEST_DIR) + "/test_files/example_value_fed.json");
 //
 //	 BOOST_CHECK_EQUAL(vFed.getName(), "fedName");
-//
+
+//   The getSubscriptionCount() and getPublicationCount() functions are not yet available in the C Interface
+
 //	 BOOST_CHECK_EQUAL(vFed.getSubscriptionCount(), 2);
 //	 BOOST_CHECK_EQUAL(vFed.getPublicationCount(), 2);
-// }
+}
 BOOST_AUTO_TEST_SUITE_END()
